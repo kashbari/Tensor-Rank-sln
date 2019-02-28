@@ -51,7 +51,6 @@ def ind(x):
     c = [a,b]
     return c
 
-print(ind(20))
 
 
 def iind(x):
@@ -61,7 +60,6 @@ def iind(x):
         c = n*x[0] +x[1]
     return c
 
-print(iind(ind(24)))
 
 
 ''' Computes Lie bracket E = [m,n] a = [i,j] '''
@@ -140,7 +138,7 @@ def ComputeLieTensor(x,y):
     return z
 
 ''' Actually construct structure tensor '''
-
+print('Calculating Tensor')
 Tensor = np.zeros((m,m,m))
 for i in range(m):
     for j in range(m):
@@ -149,54 +147,62 @@ for i in range(m):
             if z[k] != -1 and z[k] < m:
                 Tensor[i,j,z[k]] += (-1)**k
                 
-
- 
-    
-             
+print('     Tensor memory: ', Tensor.data.nbytes, 'bytes')
 
 
 # COMPUTE THE RANK OF THE KOSZUL FLATTENING
 p = 7
+print('p = ',p,',',' m = ', m)
 
-print('Tensor memory: ', Tensor.data.nbytes, 'bytes')
 d = int(nCr(m,p))
 # S: B* \to A \otimes C
 #FlattenedTensor = Tensor.reshape(m,m*m)
-FlattenedTensor = sparse.csr_matrix(Tensor.reshape(m,m*m))
+print('Calculating FlattenedTensor')
+FlattenedTensor = sparse.csr_matrix(Tensor.reshape(m,m*m), dtype=np.int32)
 del Tensor
-print('FlattenedTensor: ', FlattenedTensor.shape)
-print('FlattenedTensor memory: ', FlattenedTensor.data.nbytes, 'bytes')
+print('     FlattenedTensor shape: ', FlattenedTensor.shape)
+print('     FlattenedTensor memory: ', FlattenedTensor.data.nbytes, 'bytes')
 
 #plt.spy(FlattenedTensor, markersize = 2, aspect = 'auto')
 #plt.show()
 
 # Id_Skew \otimes S: L^p A \otimes B^* \to L^p A \otimes A \otimes C
+print('Calculating K')
 K = sparse.kron(np.eye(d), FlattenedTensor, 'csr')
-print('K shape: ', K.shape)
+print('     K shape: ', K.shape)
+print('     K memory: ', K.data.nbytes, 'bytes')
+del FlattenedTensor #delete objects from memory
 
 #Projection L^p \otimes A to L^{p+1}A    
 aa = a(int(m),int(p))
-aa = sparse.csr_matrix(aa)
+aa = sparse.csr_matrix(aa, dtype=np.int32)
 
 #Kronecker product with C
+print('Calculating P')
 P = sparse.kron(aa.T,np.eye(m),'csr')
-print('P shape: ', P.shape)
+print('     P shape: ', P.shape)
+print('     P memory: ', P.data.nbytes, 'bytes')
+del aa #delete objects from memory
 
-TAp = sparse.csr_matrix(K @ P)
-print(TAp.shape)
-print('TAp memory: ', TAp.data.nbytes, 'bytes')
+print('Calculating TAp')
+TAp = sparse.csr_matrix(K @ P, dtype=np.int32)
+
+del P, K #delete objects from memory
+
+print('     TAp shape: ', TAp.shape)
+print('     TAp memory: ', TAp.data.nbytes, 'bytes')
 #print('TAp condition number: ', LA.cond(TAp))
 
 #plt.spy(TAp, markersize = 2)
 #plt.show()
-
+sys.exit()
 
 """Various attempts to compute the rank"""
 def rank(A, eps=1e-12):
     u, s, vh = LA.svd(A)
     return len([x for x in s if abs(x) > eps])
 
-import scipy.linalg.interpolative as sli
+#import scipy.linalg.interpolative as sli
 #import scipy.sparse.linalg.interpolative as spl
 def TApMatrixVectorProduct(v):
     return TAp@v

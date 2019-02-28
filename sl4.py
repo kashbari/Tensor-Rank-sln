@@ -6,22 +6,23 @@ Created on Sat Apr 14 21:56:01 2018
 """
 
 from datetime import datetime
-
-
+import matplotlib.pylab as plt #for spy sparse matry
+import sys #for exiting script early
 import numpy as np
 #import sympy as sp
 import scipy as scipy
 from scipy import sparse
+from scipy.sparse.linalg import eigs
 import math
 from itertools import *
 #from sympy import Matrix
 #from scipy.sparse.linalg import inv
 
 
-
+#// division is better for integers
 def nCr(n,r):
     f = math.factorial
-    return f(n) / f(r) / f(n-r)
+    return f(n) // f(r) // f(n-r)
     
 def a(x,y):
     a = np.zeros( (int(nCr(x,y+1)), int(nCr(x,y)) * x) )
@@ -49,12 +50,18 @@ def ind(x):
     c = [a,b]
     return c
 
+print(ind(20))
+
+
 def iind(x):
     if x == 0:
         c = -1
     else:
         c = n*x[0] +x[1]
     return c
+
+print(iind(ind(24)))
+
 
 ''' Computes Lie bracket E = [m,n] a = [i,j] '''
 def LB(E,a):
@@ -107,7 +114,7 @@ def replace(q,v,k):
     q1[k+1] = v[1]
     return q1
 
-def LBT(E,a):
+def LieBracketTensor(E,a):
     b = []
     l = len(a)
     l2 = int(l/2)
@@ -122,62 +129,70 @@ def LBT(E,a):
                 b = b + [0]
     return b
 
-def TL(x,y):
+def ComputeLieTensor(x,y):
     x1 = ind(x)
     y1 = ind(y)
-    z1 = LBT(x1,y1)
+    z1 = LieBracketTensor(x1,y1)
     z = [0]*len(z1)
     for i in range(len(z1)):
         z[i] = iind(z1[i])
     return z
 
 ''' Actually construct structure tensor '''
-T = np.zeros((m,m,m))
+
+Tensor = np.zeros((m,m,m))
 for i in range(m):
     for j in range(m):
-        z = TL(i,j)
+        z = ComputeLieTensor(i,j)
         for k in range(len(z)):
-            if z[k] == -1:
-                T = T
-            elif (z[k] >= m):
-                T = T
-            else:
-                T[i,j,z[k]] =  T[i,j,z[k]] + (-1)**k
+            if z[k] != -1 and z[k] < m:
+                Tensor[i,j,z[k]] += (-1)**k
                 
+
+ 
+    
+             
 
 
 # COMPUTE THE RANK OF THE KOSZUL FLATTENING
 p = 7
 
-
+print('Tensor memory: ', Tensor.data.nbytes, 'bytes')
 d = int(nCr(m,p))
 # S: B* \to A \otimes C
-Tf = T.reshape(m,m*m)
-Tf = sparse.csr_matrix(Tf)
-print(Tf.shape)
-#print(np.linalg.matrix_rank(Tf))
+#FlattenedTensor = Tensor.reshape(m,m*m)
+FlattenedTensor = sparse.csr_matrix(Tensor.reshape(m,m*m))
+del Tensor
+print('FlattenedTensor: ', FlattenedTensor.shape)
+print('FlattenedTensor memory: ', FlattenedTensor.data.nbytes, 'bytes')
+
+#plt.spy(FlattenedTensor, markersize = 2, aspect = 'auto')
+#plt.show()
 
 # Id_Skew \otimes S: L^p A \otimes B^* \to L^p A \otimes A \otimes C
-K = sparse.kron(np.eye(d), Tf)
-print(K.shape)
+K = sparse.kron(np.eye(d), FlattenedTensor, 'csr')
+print('K shape: ', K.shape)
 
 #Projection L^p \otimes A to L^{p+1}A    
 aa = a(int(m),int(p))
 aa = sparse.csr_matrix(aa)
-#Kronecker product with C
-P = sparse.kron(aa.T,np.eye(m))
-P = sparse.csr_matrix(P)
-print(P.shape)
-TAp = K @ P
-print(TAp.shape)
 
-TAp = sparse.csc_matrix(TAp)
+#Kronecker product with C
+P = sparse.kron(aa.T,np.eye(m),'csr')
+print('P shape: ', P.shape)
+
+TAp = sparse.csr_matrix(K @ P)
+print(TAp.shape)
+print('TAp memory: ', TAp.data.nbytes, 'bytes')
+
+plt.spy(TAp, markersize = 2)
+plt.show()
 
 
 print('Now the annoyingly long wait...')
 startTime = datetime.now()
 #GIMME RANK OF SPARSE MATRIX print(np.linalg.matrix_rank(TAp))
-vals, vecs = scipy.sparse.linalg.eigs(TAp,k=1,sigma=3)
+vals, vecs = eigs(TAp, k=1, which = 'SM', tol = 0.00000001)
 print(vals)
 print(datetime.now() - startTime)
 

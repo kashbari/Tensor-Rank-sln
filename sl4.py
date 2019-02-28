@@ -13,6 +13,7 @@ import numpy as np
 import scipy as scipy
 from scipy import sparse
 from scipy.sparse.linalg import eigs
+from numpy import linalg as LA
 import math
 from itertools import *
 #from sympy import Matrix
@@ -184,18 +185,41 @@ print('P shape: ', P.shape)
 TAp = sparse.csr_matrix(K @ P)
 print(TAp.shape)
 print('TAp memory: ', TAp.data.nbytes, 'bytes')
+#print('TAp condition number: ', LA.cond(TAp))
 
-plt.spy(TAp, markersize = 2)
-plt.show()
+#plt.spy(TAp, markersize = 2)
+#plt.show()
 
 
+"""Various attempts to compute the rank"""
+def rank(A, eps=1e-12):
+    u, s, vh = LA.svd(A)
+    return len([x for x in s if abs(x) > eps])
+
+import scipy.linalg.interpolative as sli
+#import scipy.sparse.linalg.interpolative as spl
+def TApMatrixVectorProduct(v):
+    return TAp@v
+
+
+startTime = datetime.now()
+print(scipy.sparse.linalg.svds(TAp, k=6, which='SM'))
+
+#print(rank(TAp))
+
+#print(sli.estimate_rank(spl.LinearOperator((TAp.shape[0], TAp.shape[1]),matvec = TApMatrixVectorProduct), 1e-8))
+print(datetime.now() - startTime)
+"""===================================="""
+#sys.exit()
+
+"""
 print('Now the annoyingly long wait...')
 startTime = datetime.now()
 #GIMME RANK OF SPARSE MATRIX print(np.linalg.matrix_rank(TAp))
 vals, vecs = eigs(TAp, k=1, which = 'SM', tol = 0.00000001)
 print(vals)
 print(datetime.now() - startTime)
-
+"""
 
 
 

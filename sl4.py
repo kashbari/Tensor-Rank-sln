@@ -78,7 +78,7 @@ def LB(E,a):
 def LB1(E,a):
     [c1,c2] = LB(E,a)
     if c1 == 0 and c2 == 0:
-        d = print(0)    
+        d = print(c1)    
     elif c1 == 0 and c2 != 0:
         d = print("-",c2, sep="")
     elif c2 == 0 and c1 != 0:
@@ -147,7 +147,7 @@ for i in range(m):
 
 
 # COMPUTE THE RANK OF THE KOSZUL FLATTENING
-p = 7
+p = 1
 
 
 d = int(nCr(m,p))

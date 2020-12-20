@@ -14,8 +14,77 @@
 # also require the cartan matrix of L, with rows and columns ordered to
 # correspond with the x_i.
 
+# A_n = sl_n+1
+# B_n = so_2n+1
+# C_n = sp_2n
+# D_n = so_2n
 
 from itertools import *
+import numpy as np
+import collections
+
+
+class ssLieAlgebra():
+
+	def __init__(self,SLA):
+		if SLA[0] not in {'A','B','C','D','E','F','G'}:
+			raise NameError("Not a valid Simple Lie Algebra")
+		try:
+			self.rank = int(SLA[1:])
+		except ValueError:
+			raise NameError("Not a valid Simple Lie Algebra")
+		self.name = SLA
+		self.type = SLA[0]
+	
+	def cartan(self):
+		rk = self.rank
+		t = self.type
+		C= np.zeros((rk+1,rk+1))
+		for i in range(rk+1):
+			C[i,i] = 2
+			if i < (rk-1):
+				C[i,i+1] = -1
+				C[i+1,i] = -1
+		if t == 'A':
+			C[rk,rk-1] = -1
+			C[rk-1,rk] = -1
+		elif t == 'B':
+			C[rk,rk-1] = -2
+			C[rk-1,rk] = -1
+		elif t == 'C':
+			C[rk,rk-1] = -1
+			C[rk-1,rk] = -2
+		elif t == 'D':
+			C[rk,rk-2] = -1
+			C[rk-2,rk] = -1
+		self.cartan = C
+		return self.cartan
+
+	def reps(self):
+		R = [ [], [], [] ]
+		self.reps = R
+		self.X = self.reps[0]
+		self.Y = self.reps[1]
+		self.H = self.reps[2]
+		return reps
+	
+
+	def structure_tensor(self,lie_alg):
+		pass
+			
+
+class Representations():
+
+	def __init__(self,sslie_alg,dim):
+		self.dim = dim
+		self.lie_alg = ssLieAlgebra(sslie_alg)
+		
+	
+	def tensor_product(self,a):
+		pass
+
+	def dual(self):
+		return [[ -x.transpose() for x in s] for s in self]
 
 
 # Tensor product of modules
